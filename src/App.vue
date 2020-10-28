@@ -10,7 +10,8 @@
         <h3>{{ item.name }}</h3>
         <p>{{ item.description }}</p>
       </div>
-      <amplify-sign-out/>
+      <!-- <button v-on:click="signOut">Sign out</button> -->
+      <amplify-sign-out></amplify-sign-out>
     </div>
     <div v-else>
       <amplify-authenticator />
@@ -42,13 +43,22 @@ export default {
       this.signedIn = true
       this.user = cognitoUser
     } catch (err) {
+      console.log('not auth')
       this.signedIn = false
     }
     AmplifyEventBus.$on('authState', async  info => {
       if (info === 'signedIn') {
+        this.todos = []
         let cognitoUser = await Auth.currentAuthenticatedUser()
         this.signedIn = true
         this.user = cognitoUser
+        const username = this.user.username
+        const todos = await API.graphql({
+          query: listTodos,
+          variables: {filter: { username: { eq: username } } }, // filter samples=>https://docs.amplify.aws/cli/graphql-transformer/examples#blog-queries
+        });
+        this.todos = todos.data.listTodos.items;
+
       } else {
         this.signedIn = false
       }
@@ -61,17 +71,22 @@ export default {
   mounted() {
     console.log("mounted")
   },
-  async updated() {
-    console.log("updated")
-    const user =  await Auth.currentUserInfo()
-    const username = user.username
-    const todos = await API.graphql({
-      query: listTodos,
-      variables: {filter: { username: { eq: username } } }, // filter samples=>https://docs.amplify.aws/cli/graphql-transformer/examples#blog-queries
-    });
-    this.todos = todos.data.listTodos.items;
-  },
+  // async updated() {
+  //   const username = this.user.username
+  //   const todos = await API.graphql({
+  //     query: listTodos,
+  //     variables: {filter: { username: { eq: username } } }, // filter samples=>https://docs.amplify.aws/cli/graphql-transformer/examples#blog-queries
+  //   });
+  //   this.todos = todos.data.listTodos.items;
+  // },
   methods: {
+    signOut() {
+      console.log("sign out")
+      this.todos = []
+      this.signedIn = false
+      Auth.signOut()
+      this.beforeCreate()
+    },
     async createTodo() {
       const { user, name, description } = this;
       const username = user.username
@@ -85,7 +100,7 @@ export default {
       this.description = '';
     },
     async getTodos() {
-      const user =  await Auth.currentUserInfo()
+      const user =  await Auth.currentAuthenticatedUser()
       const username = user.username
       const todos = await API.graphql({
         query: listTodos,
