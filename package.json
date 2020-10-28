@@ -12,6 +12,7 @@
     "@aws-amplify/api": "^3.2.7",
     "@aws-amplify/ui-vue": "^0.2.23",
     "aws-amplify": "^3.3.4",
+    "aws-amplify-vue": "^2.1.2",
     "core-js": "^3.6.5",
     "vue": "^2.6.11"
   },
